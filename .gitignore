@@ -1,0 +1,13 @@
+; *.2bpp
+*.gb
+*.map
+*.sym
+*.duck
+*.o
+*.link
+*build_gb/*
+*build_duck/*
+*reference_rom/*
+Notes.md
+notes.md
+*.sublime*
