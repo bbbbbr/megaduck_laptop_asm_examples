@@ -79,8 +79,8 @@ entry_point:
 
 
     ld   hl, (_TILEMAP0 + 32)
-    call wait_until_vram_accessible
-    ld  [hl], "s"
+    ld   bc, string_init_start
+    call print_string
 
 
     call duck_io_laptop_init
@@ -89,24 +89,20 @@ entry_point:
 
     .init_ok
         ld   hl, (_TILEMAP0 + (32 * 2))
-        call wait_until_vram_accessible
-        ld  [hl], "y"
+        ld   bc, string_init_ok
+        call print_string
         jr .init_done
 
     .init_fail
         ld   hl, (_TILEMAP0 + (32 * 2))
-        call wait_until_vram_accessible
-        ld  [hl], "n"
+        ld   bc, string_init_fail
+        call print_string
 
     .init_done
 
-    ; call wait_next_frame_start
-    ; call wait_next_frame_start
 main_loop:
 
-    ; jr .end
-
-    ; Wait before
+    ; Wait 2 frames between polling
     call wait_next_frame_start
     call wait_next_frame_start
 
@@ -117,8 +113,8 @@ main_loop:
 
     .key_ok
         ld   hl, (_TILEMAP0 + (32 * 3))
-        call wait_until_vram_accessible
-        ld  [hl], "p"
+        ld   bc, string_poll_ok
+        call print_string
 
         ld   a, [duck_key_scancode]
         or   a
@@ -130,9 +126,8 @@ main_loop:
 
     .key_fail
         ld   hl, (_TILEMAP0 + (32 * 4))
-        call wait_until_vram_accessible
-        ld  [hl], "f"
-
+        ld   bc, string_poll_fail
+        call print_string
 
     .key_done
 
@@ -163,6 +158,7 @@ print_string:
     .done
     pop af
     ret
+
 
 print_hex:
     push af
@@ -237,3 +233,19 @@ SECTION "Font", ROM0
 FontTilesStart:
 incbin "res/font.bin"
 FontTilesEnd:
+
+
+
+SECTION "Strings", ROM0
+
+string_poll_fail:
+db "Poll Fail", FONT_STRING_TERM
+string_poll_ok:
+db "Poll OK", FONT_STRING_TERM
+
+string_init_fail:
+db "Init Fail", FONT_STRING_TERM
+string_init_ok:
+db "Init OK", FONT_STRING_TERM
+string_init_start:
+db "Init Start", FONT_STRING_TERM
