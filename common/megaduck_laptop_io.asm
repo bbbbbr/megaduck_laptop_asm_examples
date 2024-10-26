@@ -225,8 +225,8 @@ duck_io_send_byte_and_check_ack_msecs_timeout::
     ret
 
     .return_failure
-        ld   a, DUCK_IO_FAIL
-        ret
+    ld   a, DUCK_IO_FAIL
+    ret
 
 
 
@@ -312,13 +312,13 @@ duck_io_send_cmd_and_buffer::
     ld   b, DUCK_IO_OK  ; Return Success (A should contain DUCK_IO_OK here..)
 
     .status_in_B__restore_ie_and_return
-        pop  af
-        ldh  [rIE], a
-        ld   a, b  ; B has return status
-        pop  hl
-        pop  de
-        pop  bc
-        ret
+    pop  af
+    ldh  [rIE], a
+    ld   a, b  ; B has return status
+    pop  hl
+    pop  de
+    pop  bc
+    ret
 
     .return_failure
         ld   b, DUCK_IO_FAIL
@@ -410,16 +410,16 @@ duck_io_send_cmd_and_receive_buffer::
     ld   d, DUCK_IO_OK             ; Return Success
 
     .reply_cmd_in_A__status_in_D__restore_ie_and_return
-        ; Send command reply status in A
-        call duck_io_send_byte
-        ; Restore interrupt settings
-        pop  af
-        ldh  [rIE], a
-        ; D has Return Status
-        ld   a, d
-        pop hl
-        pop de
-        ret
+    ; Send command reply status in A
+    call duck_io_send_byte
+    ; Restore interrupt settings
+    pop  af
+    ldh  [rIE], a
+    ; D has Return Status
+    ld   a, d
+    pop hl
+    pop de
+    ret
 
     .return_failure
         ; Reset rx buffer length to zero, no bytes received
@@ -464,11 +464,11 @@ duck_io_controller_init::
     ld   a, DUCK_IO_TIMEOUT_2_MSEC
     call duck_io_read_byte_with_msecs_timeout
     cp   a, DUCK_IO_OK
-    jr   nz, .return_failure_1
+    jr   nz, .return_failure
 
     ld   a, [duck_io_rx_byte]
     cp   a, DUCK_IO_REPLY_BOOT_OK
-    jr   nz, .return_failure_2
+    jr   nz, .return_failure
 
     ; Send a command that seems to request a reciprocal countdown sequence from the external controller
     ld   a, DUCK_IO_CMD_INIT_START
@@ -484,12 +484,12 @@ duck_io_controller_init::
             ld   a, DUCK_IO_TIMEOUT_2_MSEC
             call duck_io_read_byte_with_msecs_timeout
             cp   a, DUCK_IO_OK
-            jr   nz, .return_failure_3
+            jr   nz, .return_failure
 
             ; Check to ensure reply byte matches counter. Mismatch is failure
             ld   a, [duck_io_rx_byte]
             cp   a, b
-            jr   nz, .return_failure_4
+            jr   nz, .return_failure
 
             ; decrement loop/expected reply byte counter
             ; Exit on 8 bit unsigned wraparound to 0xFFu
@@ -503,43 +503,18 @@ duck_io_controller_init::
     ld   b, DUCK_IO_OK              ; Return Success
 
     .reply_cmd_in_A__status_in_B__return
-        ; Send command reply status in A
-        call duck_io_send_byte
-        ; B has return status
-        ld   a, b
-        pop  bc
-        ret
+    ; Send command reply status in A
+    call duck_io_send_byte
+    ; B has return status
+    ld   a, b
+    pop  bc
+    ret
 
     .return_failure
-            ; ====== DEBUG
-            ld   hl, (_TILEMAP0 + (32 * 8))
-            call wait_until_vram_accessible
-            ld   [hl], ("8" - "0") + 1
-            inc   hl
-            ld   [hl], ("f" - "a") + 11
-            inc   hl
-            add  a, 1
-            ld   [hl], a
-
         ld   a, DUCK_IO_CMD_ABORT_OR_FAIL
         ld   b, DUCK_IO_FAIL
         jr   .reply_cmd_in_A__status_in_B__return
 
-    .return_failure_1
-        ld   a, 1
-        jr .return_failure
-
-    .return_failure_2
-        ld   a, 2
-        jr .return_failure
-
-    .return_failure_3
-        ld   a, 3
-        jr .return_failure
-
-    .return_failure_4
-        ld   a, 4
-        jr .return_failure
 
 
 ; Performs MegaDuck laptop IO init
@@ -566,13 +541,6 @@ duck_io_laptop_init::
     cp   a, DUCK_IO_OK
     jr   nz, .return_failure
 
-        ; ====== DEBUG
-        ld   hl, (_TILEMAP0 + (32 * 9))
-        call wait_until_vram_accessible
-        ld   [hl], ("9" - "0") + 1
-        inc   hl
-        ld   [hl], ("y" - "a") + 11
-
     ; Save response from some unknown command
     ld   a, DUCK_IO_CMD_INIT_UNKNOWN_0x09
     call duck_io_send_byte
@@ -586,26 +554,18 @@ duck_io_laptop_init::
 
     ; Ignore the RTC init check for now
 
-        ; ====== DEBUG
-        ld   hl, (_TILEMAP0 + (32 * 10))
-        call wait_until_vram_accessible
-        ld   [hl], ("0" - "0") + 1
-        inc   hl
-        ld   [hl], ("y" - "a") + 11
-
-
     ; Return Success
     ld   c, DUCK_IO_OK
 
     ; Restore saved interrupt enables and turn them on
     .status_in_C__return
-        ld   a, b
-        ldh  [rIE], a
-        ; C has Return Status
-        ld   a, c
-        pop  bc
-        ei
-        ret
+    ld   a, b
+    ldh  [rIE], a
+    ; C has Return Status
+    ld   a, c
+    pop  bc
+    ei
+    ret
 
     .return_failure
         ld   c, DUCK_IO_FAIL
