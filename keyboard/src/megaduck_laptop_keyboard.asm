@@ -91,6 +91,16 @@ main_loop:
     call wait_next_frame_start
     call wait_next_frame_start
 
+    call poll_keyboard
+
+    jr main_loop
+
+
+
+; Poll the MegaDuck Keyboard
+;
+; Regs: Does not preserve AF, BC, HL
+poll_keyboard:
     call duck_io_keyboard_poll
     ; And wait after to ensure min polling time for keyboard
     cp   a, DUCK_IO_OK
@@ -115,10 +125,8 @@ main_loop:
         call print_string
 
     .key_done
+    ret
 
-.end
-    ; jr .end
-    jr main_loop
 
 
 ; ==== Printing ====
