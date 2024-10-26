@@ -599,7 +599,7 @@ duck_io_laptop_init::
 
     ; Restore saved interrupt enables and turn them on
     .status_in_C__return
-        ld   b, a
+        ld   a, b
         ldh  [rIE], a
         ; C has Return Status
         ld   a, c
