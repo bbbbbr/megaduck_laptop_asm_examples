@@ -6,7 +6,7 @@
 
 DEF TARGET_MEGADUCK EQU 1
 
-include "charmap.inc"
+include "src/charmap.inc"
 include "../inc/hardware.inc"
 include "../inc/megaduck_laptop_io.inc"
 
@@ -71,9 +71,10 @@ entry_point:
     ld   a, (0 | 1 << 2 | 2 << 4 | 3 << 6)
     ldh  [rBGP], a
 
-    ; enable interrupts (non activated)
+    ; enable interrupts (none activated)
     ld   a, $0
     ldh  [rIE], a
+    ldh  [rIF], a
     ei
 
 
@@ -234,5 +235,5 @@ wait_next_frame_start:
 SECTION "Font", ROM0
 ; Font tileset
 FontTilesStart:
-incbin "font.bin"
+incbin "res/font.bin"
 FontTilesEnd:
