@@ -41,29 +41,14 @@ entry_point:
     ; Clear Tilemap 0
     ld   hl, _TILEMAP0
     ld   bc, (_TILEMAP_WIDTH * _TILEMAP_HEIGHT)
-
-    .fill_tilemap:
-        xor  a
-        ldi  [hl], a
-        dec  bc
-        ld   a, b
-        or   a, c
-        jr   nz, .fill_tilemap
+    ld   a, " "
+    call memset
 
     ; Load font tileset
     ld   de, FontTilesStart
     ld   hl, _TILEDATA9000
     ld   bc, FontTilesEnd - FontTilesStart
-
-    .copy_font_tiles:
-        ld   a, [de]
-        ldi  [hl], a
-        inc  de
-
-        dec  bc
-        ld   a, b
-        or   a, c
-        jr   nz, .copy_font_tiles
+    call memcopy
 
     ; Turn on screen and set palette
     ld   a, LCDCF_ON | LCDCF_BGON | LCDCF_BG9800 | LCDCF_BG8800
@@ -225,6 +210,42 @@ wait_next_frame_start:
     ret
 
 
+; 16 bit memset
+;
+; Param: fill value  :  A
+;        dest addr in:  HL
+;        size        :  BC
+memset:
+    push de
+    ld   d, a
+    .memset_loop
+        ld   a, d
+        ldi  [hl], a
+        dec  bc
+        ld   a, b
+        or   a, c
+        jr   nz, .memset_loop
+    pop de
+    ret
+
+; 16 bit memcopy
+;
+; Param: src  addr in:  DE
+;        dest addr in:  HL
+;        size        :  BC
+memcopy:
+    push af
+    .memcopy_loop
+        ld   a, [de]
+        ldi  [hl], a
+        inc  de
+
+        dec  bc
+        ld   a, b
+        or   a, c
+        jr   nz, .memcopy_loop
+    pop  af
+    ret
 
 ; ==== RESOURCE ====
 
