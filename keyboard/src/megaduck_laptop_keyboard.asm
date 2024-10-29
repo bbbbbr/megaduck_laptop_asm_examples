@@ -1,14 +1,11 @@
 
-; WORKING NOW!
-
-; CLEAN UP AND TEST AGAIN
-
 
 DEF TARGET_MEGADUCK EQU 1
 
 include "src/charmap.inc"
 include "../inc/hardware.inc"
 include "../inc/megaduck_laptop_io.inc"
+include "../inc/megaduck_laptop_keycodes.inc"
 
 
 ; ROM Header
@@ -102,7 +99,6 @@ main_loop:
 ; Regs: Does not preserve AF, BC, HL
 poll_keyboard:
     call duck_io_keyboard_poll
-    ; And wait after to ensure min polling time for keyboard
     cp   a, DUCK_IO_OK
     jr   nz, .key_fail
 
@@ -115,7 +111,29 @@ poll_keyboard:
         or   a
         jr   z, .key_done
 
+        ; Keyboard commands
+        cp   a, DUCK_IO_KEY_1
+        jr   z, .key_rtc_get
+
+        cp   a, DUCK_IO_KEY_2
+        jr   z, .key_rtc_set
+        jr   .key_handle_done
+
+        .key_rtc_get
+            push af
+            call read_rtc
+            pop  af
+            jr   .key_handle_done
+
+        .key_rtc_set
+            push af
+            call write_rtc
+            pop  af
+            jr   .key_handle_done
+
+        .key_handle_done
         ; If not MEGADUCK_KBD_CODE_NONE, then print
+        ld   hl, (_TILEMAP0 + (32 * 0))
         call nz, print_hex
         jr .key_done
 
@@ -126,6 +144,105 @@ poll_keyboard:
 
     .key_done
     ret
+
+
+
+; Read from the MegaDuck RTC
+;
+; Regs: Does not preserve AF, HL, BC
+read_rtc:
+    call duck_io_get_rtc
+    cp   a, DUCK_IO_OK
+    jr   nz, .rtc_fail
+
+    .rtc_ok
+        ld   hl, (_TILEMAP0 + (32 * 10))
+        ld   bc, string_rtc_get_ok
+        call print_string
+
+        ; Print RTC data
+        ld   hl, (_TILEMAP0 + (32 * 11))
+        ld   a, [duck_rtc_year]
+        call print_hex
+
+        inc  hl
+        ld   a, [duck_rtc_mon]
+        call print_hex
+
+        inc  hl
+        ld   a, [duck_rtc_day]
+        call print_hex
+
+        inc  hl
+        ld   a, [duck_rtc_weekday]
+        call print_hex
+
+        ld   hl, (_TILEMAP0 + (32 * 12))
+        ld   a, [duck_rtc_ampm]
+        call print_hex
+
+        inc  hl
+        ld   a, [duck_rtc_hour]
+        call print_hex
+
+        inc  hl
+        ld   a, [duck_rtc_min]
+        call print_hex
+
+        inc  hl
+        ld   a, [duck_rtc_sec]
+        call print_hex
+
+        jr .rtc_done
+
+    .rtc_fail
+        ld   hl, (_TILEMAP0 + (32 * 10))
+        ld   bc, string_rtc_get_fail
+        call print_string
+
+    .rtc_done
+    ret
+
+
+
+; Write to the MegaDuck RTC
+;
+; Regs: Does not preserve AF
+write_rtc:
+    ; Data for RTC: Friday, Jan 2, 2015, 03:45pm 01 sec
+    ld   a, (2015 - 1900) ; $73 = 115
+    ld   [duck_rtc_year], a
+    ld   a, $01 ; Jan=1
+    ld   [duck_rtc_mon], a
+    ld   a, $02 ; 2nd day of month
+    ld   [duck_rtc_day], a
+    ld   a, $05 ; 5 = Friday (days since Sunday 0-6)
+    ld   [duck_rtc_weekday], a
+
+    ld   a, 1 ; AM = 0, PM = 1
+    ld   [duck_rtc_ampm], a
+    ld   a, $03 ; Hour 0-11
+    ld   [duck_rtc_hour], a
+    ld   a, $45;  Min
+    ld   [duck_rtc_min], a
+    ld   a, $01;  Sec
+    ld   [duck_rtc_sec], a
+
+    call duck_io_set_rtc
+    cp   a, DUCK_IO_OK
+    jr   nz, .rtc_set_fail
+
+    .rtc_set_ok
+    ld   hl, (_TILEMAP0 + (32 * 13))
+    ld   bc, string_rtc_set_ok
+    call print_string
+    ret
+
+    .rtc_set_fail
+        ld   hl, (_TILEMAP0 + (32 * 13))
+        ld   bc, string_rtc_set_fail
+        call print_string
+        ret
 
 
 
@@ -153,24 +270,26 @@ print_string:
     ret
 
 
+; Print hex value in a at HL
+;
+; Param: byte value to print: in A
+;      : vram address:        in HL
+;
+; Returns: Address after printing in VRAM tile map (32 wide): HL
 print_hex:
-    push af
-    push hl
-
-    ld   hl, _TILEMAP0
-    call wait_until_vram_accessible
-
-    ; Clear print area
-    ld   [hl], 0
-    inc  hl
-    ld   [hl], 0
-    dec  hl
+    ; call wait_until_vram_accessible
+    ; ; Clear print area
+    ; ld   [hl], 0
+    ; inc  hl
+    ; ld   [hl], 0
+    ; dec  hl
 
     push af
     ; High digit
     and  a, $F0
     swap a
     add  FONT_DIGIT_START  ; start of font digit 0
+    call wait_until_vram_accessible
     ldi  [hl], a
 
     ; Low digit
@@ -178,9 +297,6 @@ print_hex:
     and  a, $0F
     add  FONT_DIGIT_START  ; start of font digit 0
     ldi  [hl], a
-
-    pop  hl
-    pop  af
     ret
 
 
@@ -278,3 +394,14 @@ string_init_ok:
 db "Init OK", FONT_STRING_TERM
 string_init_start:
 db "Init Start", FONT_STRING_TERM
+
+string_rtc_set_fail:
+db "rtc set Fail", FONT_STRING_TERM
+string_rtc_set_ok:
+db "rtc set OK", FONT_STRING_TERM
+
+string_rtc_get_fail:
+db "rtc get Fail", FONT_STRING_TERM
+string_rtc_get_ok:
+db "rtc get OK", FONT_STRING_TERM
+
