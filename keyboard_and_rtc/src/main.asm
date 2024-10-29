@@ -7,6 +7,13 @@ include "../inc/hardware.inc"
 include "../inc/megaduck_laptop_io.inc"
 include "../inc/megaduck_laptop_keycodes.inc"
 
+LD_ADDR_TILEMAP0_X_Y: MACRO
+; \1 = Register
+; \2 = X coordinate
+; \3 = Y coordinate
+    ld   \1, (_TILEMAP0 + (_TILEMAP_WIDTH * \3) + \2)
+ENDM
+
 
 ; ROM Header
 SECTION "Duck Entry Point", ROM0[$0]
@@ -70,13 +77,13 @@ entry_point:
     jr   nz, .init_fail
 
     .init_ok
-        ld   hl, (_TILEMAP0 + (32 * 2))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 2
         ld   bc, string_init_ok
         call print_string
         jr .init_done
 
     .init_fail
-        ld   hl, (_TILEMAP0 + (32 * 2))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 2
         ld   bc, string_init_fail
         call print_string
 
@@ -103,7 +110,7 @@ poll_keyboard:
     jr   nz, .key_fail
 
     .key_ok
-        ld   hl, (_TILEMAP0 + (32 * 3))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 3
         ld   bc, string_poll_ok
         call print_string
 
@@ -133,12 +140,12 @@ poll_keyboard:
 
         .key_handle_done
         ; If not MEGADUCK_KBD_CODE_NONE, then print
-        ld   hl, (_TILEMAP0 + (32 * 0))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 0
         call nz, print_hex
         jr .key_done
 
     .key_fail
-        ld   hl, (_TILEMAP0 + (32 * 4))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 4
         ld   bc, string_poll_fail
         call print_string
 
@@ -156,12 +163,12 @@ read_rtc:
     jr   nz, .rtc_fail
 
     .rtc_ok
-        ld   hl, (_TILEMAP0 + (32 * 10))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 10
         ld   bc, string_rtc_get_ok
         call print_string
 
         ; Print RTC data
-        ld   hl, (_TILEMAP0 + (32 * 11))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 11
         ld   a, [duck_rtc_year]
         call print_hex
 
@@ -177,7 +184,7 @@ read_rtc:
         ld   a, [duck_rtc_weekday]
         call print_hex
 
-        ld   hl, (_TILEMAP0 + (32 * 12))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 12
         ld   a, [duck_rtc_ampm]
         call print_hex
 
@@ -196,7 +203,7 @@ read_rtc:
         jr .rtc_done
 
     .rtc_fail
-        ld   hl, (_TILEMAP0 + (32 * 10))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 10
         ld   bc, string_rtc_get_fail
         call print_string
 
@@ -233,13 +240,13 @@ write_rtc:
     jr   nz, .rtc_set_fail
 
     .rtc_set_ok
-    ld   hl, (_TILEMAP0 + (32 * 13))
+    LD_ADDR_TILEMAP0_X_Y HL, 0, 13
     ld   bc, string_rtc_set_ok
     call print_string
     ret
 
     .rtc_set_fail
-        ld   hl, (_TILEMAP0 + (32 * 13))
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 13
         ld   bc, string_rtc_set_fail
         call print_string
         ret
@@ -277,13 +284,6 @@ print_string:
 ;
 ; Returns: Address after printing in VRAM tile map (32 wide): HL
 print_hex:
-    ; call wait_until_vram_accessible
-    ; ; Clear print area
-    ; ld   [hl], 0
-    ; inc  hl
-    ; ld   [hl], 0
-    ; dec  hl
-
     push af
     ; High digit
     and  a, $F0
