@@ -5,7 +5,7 @@ SRC_DIR = src
 RES_DIR = res
 
 BIN_EXT  = duck
-BIN_NAME = megaduck_laptop_keyboard
+BIN_NAME = keybaord_rtc
 
 
 all:
