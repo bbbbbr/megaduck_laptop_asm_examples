@@ -67,23 +67,33 @@ entry_point:
     ei
 
 
-    ld   hl, (_TILEMAP0 + 32)
+    ; Some intro text
+    LD_ADDR_TILEMAP0_X_Y HL, 0, 0
+    ld   bc, string_key_code
+    call print_string
+
+    LD_ADDR_TILEMAP0_X_Y HL, 0, 1
     ld   bc, string_init_start
     call print_string
 
+    LD_ADDR_TILEMAP0_X_Y HL, 0, 2
+    ld   bc, string_init_info
+    call print_string
 
+
+    ; Initialize the peripheral IO hardware
     call duck_io_laptop_init
     cp   a, DUCK_IO_OK
     jr   nz, .init_fail
 
     .init_ok
-        LD_ADDR_TILEMAP0_X_Y HL, 0, 2
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 3
         ld   bc, string_init_ok
         call print_string
         jr .init_done
 
     .init_fail
-        LD_ADDR_TILEMAP0_X_Y HL, 0, 2
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 3
         ld   bc, string_init_fail
         call print_string
 
@@ -110,7 +120,7 @@ poll_keyboard:
     jr   nz, .key_fail
 
     .key_ok
-        LD_ADDR_TILEMAP0_X_Y HL, 0, 3
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 4
         ld   bc, string_poll_ok
         call print_string
 
@@ -124,6 +134,7 @@ poll_keyboard:
 
         cp   a, DUCK_IO_KEY_2
         jr   z, .key_rtc_set
+
         jr   .key_handle_done
 
         .key_rtc_get
@@ -139,13 +150,12 @@ poll_keyboard:
             jr   .key_handle_done
 
         .key_handle_done
-        ; If not MEGADUCK_KBD_CODE_NONE, then print
-        LD_ADDR_TILEMAP0_X_Y HL, 0, 0
-        call nz, print_hex
+        LD_ADDR_TILEMAP0_X_Y HL, 9, 0
+        call print_hex
         jr .key_done
 
     .key_fail
-        LD_ADDR_TILEMAP0_X_Y HL, 0, 4
+        LD_ADDR_TILEMAP0_X_Y HL, 0, 5
         ld   bc, string_poll_fail
         call print_string
 
@@ -388,12 +398,17 @@ db "Poll Fail", FONT_STRING_TERM
 string_poll_ok:
 db "Poll OK", FONT_STRING_TERM
 
+string_key_code:
+db "Key Code:", FONT_STRING_TERM
+string_init_start:
+db "Init Start", FONT_STRING_TERM
+string_init_info:
+db "1:RTC GET 2:RTC SET", FONT_STRING_TERM
+
 string_init_fail:
 db "Init Fail", FONT_STRING_TERM
 string_init_ok:
 db "Init OK", FONT_STRING_TERM
-string_init_start:
-db "Init Start", FONT_STRING_TERM
 
 string_rtc_set_fail:
 db "rtc set Fail", FONT_STRING_TERM
