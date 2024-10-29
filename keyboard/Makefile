@@ -12,7 +12,7 @@ all:
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(BIN_DIR)
 	rgbgfx  $(RES_DIR)/font.png -o $(RES_DIR)/font.bin
-	rgbasm  -w $(SRC_DIR)/megaduck_laptop_keyboard.asm -o $(OBJ_DIR)/main.o --halt-without-nop
+	rgbasm  -w $(SRC_DIR)/main.asm -o $(OBJ_DIR)/main.o --halt-without-nop
 	rgbasm  -w ../common/megaduck_laptop_io.asm -o $(OBJ_DIR)/megaduck_laptop_io.o --halt-without-nop
 	rgbasm  -w ../common/megaduck_laptop_keyboard.asm -o $(OBJ_DIR)/megaduck_laptop_keyboard.o --halt-without-nop
 	rgbasm  -w ../common/megaduck_laptop_rtc.asm -o $(OBJ_DIR)/megaduck_laptop_rtc.o --halt-without-nop
